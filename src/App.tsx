@@ -2,6 +2,16 @@ import './App.css'
 
 function App() {
 
+    const name = "Orhun Akkan";
+    const year = new Date().getFullYear();
+    
+    return (
+        <>
+            <p>Created by {name}</p>
+            <p>Copyright {year}</p>
+        </>
+    )
+
     return (
         <>
             <h1>Vite + React</h1>
