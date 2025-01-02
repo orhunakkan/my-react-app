@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from './ThemeContext';
 import './Calendar.css';
+import { ref, onValue, set } from 'firebase/database';
+import { database } from './firebase';
 
 const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -17,35 +19,42 @@ interface DayState {
 const Calendar = () => {
     const { isDarkMode, toggleTheme } = useTheme();
     const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
-    const [dayStates, setDayStates] = useState<{ [key: string]: DayState }>(() => {
-        const saved = localStorage.getItem('dayStates');
-        return saved ? JSON.parse(saved) : {};
-    });
+    const [dayStates, setDayStates] = useState<{ [key: string]: DayState }>({});
 
     useEffect(() => {
-        localStorage.setItem('dayStates', JSON.stringify(dayStates));
-    }, [dayStates]);
+        const dayStatesRef = ref(database, 'dayStates');
+        onValue(dayStatesRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                setDayStates(data);
+            }
+        });
+    }, []);
 
     const handleDayClick = (month: number, day: number) => {
         const key = `${month}-${day}`;
-        setDayStates(prev => ({
-            ...prev,
+        const newDayStates = {
+            ...dayStates,
             [key]: {
-                isSelected: !prev[key]?.isRed && !prev[key]?.isSelected,
+                isSelected: !dayStates[key]?.isRed && !dayStates[key]?.isSelected,
                 isRed: false
             }
-        }));
+        };
+        setDayStates(newDayStates);
+        set(ref(database, 'dayStates'), newDayStates);
     };
 
     const handleDayDoubleClick = (month: number, day: number) => {
         const key = `${month}-${day}`;
-        setDayStates(prev => ({
-            ...prev,
+        const newDayStates = {
+            ...dayStates,
             [key]: {
                 isSelected: false,
                 isRed: true
             }
-        }));
+        };
+        setDayStates(newDayStates);
+        set(ref(database, 'dayStates'), newDayStates);
     };
 
     const getDayOfWeek = (day: number, month: number, year: number) => {
